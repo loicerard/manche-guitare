@@ -65,6 +65,15 @@ h1{font-family:var(--display);font-weight:700;font-size:clamp(1.7rem,3.5vw,2.4re
 .dot.root{box-shadow:0 0 0 2px var(--wood-2),0 0 0 4px var(--d-root)}
 .cell.open .dot.root{box-shadow:0 0 0 2px var(--bg),0 0 0 4px var(--d-root)}
 .dot.picked{transform:scale(1.14)}
+.dot.grip{box-shadow:0 0 0 2px var(--wood-2),0 0 0 4px var(--inlay)}
+.cell.open .dot.grip{box-shadow:0 0 0 2px var(--bg),0 0 0 4px var(--fg)}
+.dot.grip.root{box-shadow:0 0 0 2px var(--wood-2),0 0 0 4px var(--d-root)}
+.cell.open .dot.grip.root{box-shadow:0 0 0 2px var(--bg),0 0 0 4px var(--d-root)}
+.dot.zone{opacity:.4;transform:scale(.8)}
+.bands{display:grid;grid-template-rows:repeat(3,18px);gap:2px;margin-bottom:6px}
+.bands div{display:flex;align-items:center;padding-left:6px;border-radius:4px;font-family:var(--mono);font-weight:600;font-size:.75rem;background:var(--band);color:var(--fg)}
+.bands div:nth-child(odd){--band:color-mix(in srgb,var(--accent) 22%,transparent)}
+.bands div:nth-child(even){--band:color-mix(in srgb,var(--d-fifth) 26%,transparent)}
 .frets{display:grid;margin-top:6px}
 .frets div{text-align:center;font-family:var(--mono);font-size:.75rem;color:var(--muted)}
 .frets div.mk{color:var(--fg);font-weight:600}
@@ -90,11 +99,11 @@ h2{font-family:var(--display);font-weight:500;font-size:1.15rem;margin:0 0 8px}
   <header>
     <div>
       <h1>Manche et degrés</h1>
-      <p class="sub">Accordage standard E A D G B E. Clique sur n'importe quelle case : sa note devient la tonique et tout le manche affiche les degrés correspondants.</p>
+      <p class="sub">Accordage standard E A D G B E. Clique sur n'importe quelle case : sa note devient la tonique et tout le manche affiche les degrés correspondants. Choisis une forme CAGED pour voir sa grille, son arpège et sa zone.</p>
     </div>
     <div class="tonic" aria-live="polite">
       <div><div class="lbl">Tonique</div><div class="big" id="tonicName">A</div></div>
-      <div class="where" id="tonicWhere">Corde de Mi grave, case 5</div>
+      <div class="where"><div id="tonicWhere">Corde de Mi grave, case 5</div><div id="tonicShape" hidden></div></div>
     </div>
   </header>
 
@@ -102,10 +111,14 @@ h2{font-family:var(--display);font-weight:500;font-size:1.15rem;margin:0 0 8px}
     <div class="group"><span>Afficher</span><div class="chips" id="filters"></div></div>
     <div class="group"><span>Étiquettes</span><div class="chips" id="modes"></div></div>
     <div class="group"><span>Notation</span><div class="chips" id="names"></div></div>
+    <div class="group"><span>Forme CAGED</span><div class="chips" id="caged"></div></div>
+    <div class="group" id="qualityGroup"><span>Accord</span><div class="chips" id="quality"></div></div>
   </div>
 
   <div class="board-scroll">
     <div class="neck">
+      <div data-bands></div>
+      <div class="bands" id="bands" data-bands></div>
       <div class="snames" id="snames"></div>
       <div>
         <div class="board" id="board"></div>
@@ -120,6 +133,8 @@ h2{font-family:var(--display);font-weight:500;font-size:1.15rem;margin:0 0 8px}
     <span style="--c:var(--d-fifth)"><b></b>Quintes (♭5, 5)</span>
     <span style="--c:var(--d-seventh)"><b></b>Septièmes (♭7, 7)</span>
     <span style="--c:var(--d-other)"><b style="outline:1px solid var(--line)"></b>Autres (♭2, 2, 4, ♭6, 6)</span>
+    <span style="--c:var(--d-other)" data-caged><b style="box-shadow:0 0 0 2px var(--bg),0 0 0 4px var(--fg)"></b>Grille de la forme</span>
+    <span style="--c:var(--d-other)" data-caged><b style="opacity:.4;outline:1px solid var(--line)"></b>Note du filtre « Afficher » dans la zone</span>
   </div>
 
   <section>
@@ -162,8 +177,29 @@ h2{font-family:var(--display);font-weight:500;font-size:1.15rem;margin:0 0 8px}
   ];
   const MODES=[['deg','Degrés'],['note','Notes'],['both','Les deux']];
   const NAMES=[['en','A B C'],['fr','Do Ré Mi']];
+  const ivs=label=>FILTERS.find(x=>x[0]===label)[1];
+  const QUALITIES=[['maj','',ivs('Triade maj')],['m','m',ivs('Triade min')],['7','7',ivs('7 (dominante)')],['maj7','maj7',ivs('maj7')],['m7','m7',ivs('m7')]];
+  // grips written low E → high e, like chord charts; explicit because the string where ♭7 replaces a root varies per shape
+  const CAGED=[
+    {name:'C',key:0,grips:{maj:'x32010',m:'x31013','7':'x32310',maj7:'x32000',m7:'x3134x'}},
+    {name:'A',key:9,grips:{maj:'x02220',m:'x02210','7':'x02020',maj7:'x02120',m7:'x02010'}},
+    {name:'G',key:7,grips:{maj:'320003',m:'310033','7':'320001',maj7:'320002',m7:'3x333x'}},
+    {name:'E',key:4,grips:{maj:'022100',m:'022000','7':'020100',maj7:'021100',m7:'020000'}},
+    {name:'D',key:2,grips:{maj:'xx0232',m:'xx0231','7':'xx0212',maj7:'xx0222',m7:'xx0211'}},
+  ];
+  const CAGED_OPTS=[['off','Off'],...CAGED.map((x,i)=>[i,x.name]),['all','Toutes']];
+  const gripAt=(str,shift)=>str.split('').reverse().map(c=>c==='x'?null:+c+shift);
+  const played=g=>g.filter(f=>f!==null);
 
-  const state={s:5,f:5,filter:0,mode:'deg',names:'en'};
+  function instances(shape,root,quality){
+    const base=(root-shape.key+12)%12;
+    return [base,base+12].map(shift=>{
+      const major=played(gripAt(shape.grips.maj,shift));
+      return {shape,grip:gripAt(shape.grips[quality],shift),lo:Math.min(...major)-1,hi:Math.max(...major)+1};
+    }).filter(x=>Math.max(...played(x.grip),x.hi-1)<=FRETS);
+  }
+
+  const state={s:5,f:5,filter:0,mode:'deg',names:'en',caged:'off',quality:'7'};
   try{const saved=JSON.parse(localStorage.getItem('manche-degres')||'null'); if(saved) Object.assign(state,saved);}catch(e){}
   const save=()=>{try{localStorage.setItem('manche-degres',JSON.stringify(state))}catch(e){}};
 
@@ -178,6 +214,7 @@ h2{font-family:var(--display);font-weight:500;font-size:1.15rem;margin:0 0 8px}
   const board=document.getElementById('board');
   board.style.gridTemplateColumns=tmpl;
   document.getElementById('frets').style.gridTemplateColumns=tmpl;
+  document.getElementById('bands').style.gridTemplateColumns=tmpl;
 
   const openBg=document.createElement('div'); openBg.className='open-bg'; board.appendChild(openBg);
   Object.entries(MARKS).forEach(([f,n])=>{
@@ -220,9 +257,22 @@ h2{font-family:var(--display);font-weight:500;font-size:1.15rem;margin:0 0 8px}
     chips('filters',FILTERS,'filter',(x,i)=>i,x=>x[0]);
     chips('modes',MODES,'mode',x=>x[0],x=>x[1]);
     chips('names',NAMES,'names',x=>x[0],x=>x[1]);
+    chips('caged',CAGED_OPTS,'caged',x=>x[0],x=>x[1]);
+    chips('quality',QUALITIES,'quality',x=>x[0],x=>x[0]);
 
     const root=pcAt(state.s,state.f);
     const allowed=new Set(FILTERS[state.filter][1]);
+    const caged=state.caged!=='off', all=state.caged==='all';
+    const quality=QUALITIES.find(x=>x[0]===state.quality);
+    const chord=new Set(quality[2]);
+    const insts=caged?CAGED.filter((x,i)=>all||state.caged===i).flatMap(x=>instances(x,root,state.quality)):[];
+
+    document.getElementById('qualityGroup').hidden=!caged;
+    document.querySelectorAll('[data-caged]').forEach(el=>el.hidden=!caged);
+    document.querySelectorAll('[data-bands]').forEach(el=>el.hidden=!all);
+    // adjacent zones overlap by a fret, so three rows keep every band clear of its neighbours
+    document.getElementById('bands').innerHTML=all?insts.slice().sort((a,b)=>a.lo-b.lo).map((x,i)=>
+      `<div style="grid-row:${i%3+1};grid-column:${Math.max(x.lo,0)+1}/${Math.min(x.hi,FRETS)+2}">${x.shape.name}</div>`).join(''):'';
 
     sn.innerHTML=STRINGS.map(st=>`<div>${state.names==='fr'?st.fr.split(' ')[0]:st.en}</div>`).join('');
     fr.innerHTML=Array.from({length:FRETS+1},(_,f)=>`<div class="${MARKS[f]?'mk':''}">${f===0?'0':f}</div>`).join('');
@@ -235,18 +285,29 @@ h2{font-family:var(--display);font-weight:500;font-size:1.15rem;margin:0 0 8px}
         dot.style.setProperty('--c',c); dot.style.setProperty('--t',t);
         const deg=DEG[iv], note=nn(pc);
         dot.innerHTML= state.mode==='deg'?deg : state.mode==='note'?note : `${deg}<small>${note}</small>`;
-        dot.classList.toggle('off',!allowed.has(iv));
+        const inGrip=insts.some(x=>x.grip[s]===f);
+        const inZone=insts.some(x=>f>=x.lo&&f<=x.hi);
+        const inChord=chord.has(iv)&&!all&&inZone;
+        const shown=!caged||all?allowed.has(iv)||inGrip:inGrip||(inZone&&(chord.has(iv)||allowed.has(iv)));
+        dot.classList.toggle('off',!shown);
+        dot.classList.toggle('grip',inGrip);
+        dot.classList.toggle('zone',caged&&!all&&shown&&!inGrip&&!chord.has(iv));
         dot.classList.toggle('root',iv===0);
         dot.classList.toggle('picked',s===state.s&&f===state.f);
-        b.setAttribute('aria-label',`Corde ${st.fr}, ${f===0?'à vide':'case '+f} : ${note}, degré ${deg}`);
+        const role=inGrip?', note de la grille':inChord?", note de l'accord":'';
+        b.setAttribute('aria-label',`Corde ${st.fr}, ${f===0?'à vide':'case '+f} : ${note}, degré ${deg}${role}`);
       }
     });
 
     document.getElementById('tonicName').textContent=nn(root);
     document.getElementById('tblTonic').textContent=nn(root);
     document.getElementById('tonicWhere').textContent=`Corde de ${STRINGS[state.s].fr}, ${state.f===0?'à vide':'case '+state.f}`;
+    const shapeEl=document.getElementById('tonicShape');
+    shapeEl.hidden=!caged;
+    shapeEl.textContent=caged?`${all?'5 formes':'Forme '+CAGED[state.caged].name} · ${nn(root)}${quality[1]}`:'';
 
-    const dim=i=>allowed.has(i)?'':' dim';
+    const inTable=caged?chord:allowed;
+    const dim=i=>inTable.has(i)?'':' dim';
     let h='<tr><th>Degré</th>'+DEG.map((d,i)=>{const[c,t]=COLOR[CAT[i]];return `<td class="deg${dim(i)}" style="--c:${c};--t:${t}"><span>${d}</span></td>`}).join('')+'</tr>';
     h+='<tr><th>Note</th>'+DEG.map((d,i)=>`<td class="note${dim(i)}">${nn((root+i)%12)}</td>`).join('')+'</tr>';
     h+='<tr><th>Demi-tons</th>'+DEG.map((d,i)=>`<td class="name${dim(i)}">${i}</td>`).join('')+'</tr>';
