@@ -1,0 +1,260 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Manche et degrés</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap">
+<style>
+/* Layout: one column; controls on top, wide fretboard (scrolls sideways on phones), degree table below */
+:root{
+  --bg:#eef0ec; --surface:#f8f9f6; --fg:#1d2320; --muted:#5d6762; --line:#d3d8d2;
+  --accent:#d2452f;
+  --wood:#3a2418; --wood-2:#2c1a11; --fret:#c9c3b6; --string:#e6dccb; --inlay:#efe6d4; --nut:#efe8d8;
+  --d-root:#e0533b; --d-third:#e8b23a; --d-fifth:#3f9fa6; --d-seventh:#8f6fc7; --d-other:#ece7dc;
+  --on-light:#1d1712; --on-dark:#fff;
+  --display:"Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --body:"IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --mono:"IBM Plex Mono", ui-monospace, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#141816; --surface:#1c211f; --fg:#e8ece9; --muted:#9aa49f; --line:#2f3633;
+  --accent:#f0674f; --wood:#2e1c13; --wood-2:#22140d; color-scheme:dark;
+}}
+:root[data-theme="dark"]{
+  --bg:#141816; --surface:#1c211f; --fg:#e8ece9; --muted:#9aa49f; --line:#2f3633;
+  --accent:#f0674f; --wood:#2e1c13; --wood-2:#22140d; color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:15px;line-height:1.5}
+.wrap{max-width:1180px;margin:0 auto;padding-inline:16px;padding-block:28px 48px;display:flex;flex-direction:column;gap:22px}
+header{display:flex;flex-wrap:wrap;align-items:end;justify-content:space-between;gap:12px 24px}
+h1{font-family:var(--display);font-weight:700;font-size:clamp(1.7rem,3.5vw,2.4rem);line-height:1.05;margin:0;letter-spacing:-.01em;text-wrap:balance}
+.sub{margin:.35rem 0 0;color:var(--muted);max-width:60ch}
+.tonic{display:flex;align-items:center;gap:14px;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px 16px}
+.tonic .lbl{font-size:.72rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+.tonic .big{font-family:var(--display);font-weight:700;font-size:2rem;line-height:1;color:var(--accent)}
+.tonic .where{font-size:.85rem;color:var(--muted)}
+
+.controls{display:flex;flex-wrap:wrap;gap:14px 28px;align-items:flex-start}
+.group{display:flex;flex-direction:column;gap:6px;min-width:0}
+.group > span{font-size:.72rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{font:inherit;font-size:.85rem;border:1px solid var(--line);background:var(--surface);color:var(--fg);padding:5px 11px;border-radius:999px;cursor:pointer}
+.chip:hover{border-color:var(--muted)}
+.chip[aria-pressed="true"]{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+.chip:focus-visible,.cell:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+.board-scroll{overflow-x:auto;padding-bottom:6px;-webkit-overflow-scrolling:touch}
+.neck{min-width:820px;display:grid;grid-template-columns:2.2rem 1fr;gap:0 6px}
+.snames{display:grid;grid-template-rows:repeat(6,46px);padding-block:8px}
+.snames div{display:flex;align-items:center;justify-content:flex-end;font-family:var(--mono);font-weight:600;font-size:.85rem;color:var(--muted)}
+.board{position:relative;display:grid;grid-template-rows:repeat(6,46px);padding-block:8px;border-radius:6px;
+  background:linear-gradient(180deg,var(--wood) 0%,var(--wood-2) 100%)}
+.board .open-bg{grid-row:1/-1;grid-column:1;background:var(--bg);margin-block:-8px}
+.inlay{grid-row:1/-1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:92px;pointer-events:none}
+.inlay i{width:13px;height:13px;border-radius:50%;background:var(--inlay);opacity:.85}
+.cell{position:relative;appearance:none;border:0;background:transparent;padding:0;margin:0;cursor:pointer;display:flex;align-items:center;justify-content:center;font:inherit;color:inherit}
+.cell::before{content:"";position:absolute;left:0;right:0;top:50%;height:var(--sw,1px);transform:translateY(-50%);background:var(--string);opacity:.9}
+.cell.fretted::after{content:"";position:absolute;right:-1.5px;top:-8px;bottom:-8px;width:3px;background:var(--fret);z-index:1}
+.cell.nut::after{content:"";position:absolute;right:-3px;top:-8px;bottom:-8px;width:6px;background:var(--nut);z-index:1;border-radius:1px}
+.cell.open::before{background:var(--muted);opacity:.5}
+.cell:hover .dot.off{opacity:.55;transform:scale(.85)}
+.dot{position:relative;z-index:2;min-width:32px;height:32px;padding:0 5px;border-radius:999px;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  font-family:var(--mono);font-weight:600;font-size:.82rem;line-height:1;background:var(--c,var(--d-other));color:var(--t,var(--on-light));
+  box-shadow:0 1px 2px rgba(0,0,0,.35);transition:transform .12s ease, opacity .12s ease}
+.dot small{font-size:.6rem;font-weight:500;opacity:.8;margin-top:2px}
+.dot.off{opacity:0;transform:scale(.6)}
+.dot.root{box-shadow:0 0 0 2px var(--wood-2),0 0 0 4px var(--d-root)}
+.cell.open .dot.root{box-shadow:0 0 0 2px var(--bg),0 0 0 4px var(--d-root)}
+.dot.picked{transform:scale(1.14)}
+.frets{display:grid;margin-top:6px}
+.frets div{text-align:center;font-family:var(--mono);font-size:.75rem;color:var(--muted)}
+.frets div.mk{color:var(--fg);font-weight:600}
+
+.legend{display:flex;flex-wrap:wrap;gap:8px 18px;font-size:.85rem;color:var(--muted)}
+.legend span{display:inline-flex;align-items:center;gap:7px}
+.legend b{width:14px;height:14px;border-radius:50%;display:inline-block;background:var(--c)}
+
+.table-wrap{overflow-x:auto}
+table{border-collapse:collapse;font-variant-numeric:tabular-nums;width:100%;min-width:680px}
+th,td{padding:8px 6px;text-align:center;border-bottom:1px solid var(--line)}
+th{font-size:.72rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:500;text-align:left;white-space:nowrap}
+td.deg{font-family:var(--mono);font-weight:600}
+td.deg span{display:inline-block;min-width:34px;padding:3px 6px;border-radius:999px;background:var(--c);color:var(--t,var(--on-light))}
+td.note{font-family:var(--mono)}
+td.name{font-size:.78rem;color:var(--muted)}
+td.dim{opacity:.35}
+h2{font-family:var(--display);font-weight:500;font-size:1.15rem;margin:0 0 8px}
+@media (prefers-reduced-motion: reduce){.dot{transition:none}}
+</style>
+
+<div class="wrap">
+  <header>
+    <div>
+      <h1>Manche et degrés</h1>
+      <p class="sub">Accordage standard E A D G B E. Clique sur n'importe quelle case : sa note devient la tonique et tout le manche affiche les degrés correspondants.</p>
+    </div>
+    <div class="tonic" aria-live="polite">
+      <div><div class="lbl">Tonique</div><div class="big" id="tonicName">A</div></div>
+      <div class="where" id="tonicWhere">Corde de Mi grave, case 5</div>
+    </div>
+  </header>
+
+  <div class="controls">
+    <div class="group"><span>Afficher</span><div class="chips" id="filters"></div></div>
+    <div class="group"><span>Étiquettes</span><div class="chips" id="modes"></div></div>
+    <div class="group"><span>Notation</span><div class="chips" id="names"></div></div>
+  </div>
+
+  <div class="board-scroll">
+    <div class="neck">
+      <div class="snames" id="snames"></div>
+      <div>
+        <div class="board" id="board"></div>
+        <div class="frets" id="frets"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="legend">
+    <span style="--c:var(--d-root)"><b></b>Tonique (1)</span>
+    <span style="--c:var(--d-third)"><b></b>Tierces (♭3, 3)</span>
+    <span style="--c:var(--d-fifth)"><b></b>Quintes (♭5, 5)</span>
+    <span style="--c:var(--d-seventh)"><b></b>Septièmes (♭7, 7)</span>
+    <span style="--c:var(--d-other)"><b style="outline:1px solid var(--line)"></b>Autres (♭2, 2, 4, ♭6, 6)</span>
+  </div>
+
+  <section>
+    <h2>Les 12 degrés depuis <span id="tblTonic">A</span></h2>
+    <div class="table-wrap"><table id="tbl"></table></div>
+  </section>
+</div>
+
+<script>
+(function(){
+  const EN=['C','C♯','D','D♯','E','F','F♯','G','G♯','A','A♯','B'];
+  const FR=['Do','Do♯','Ré','Ré♯','Mi','Fa','Fa♯','Sol','Sol♯','La','La♯','Si'];
+  const DEG=['1','♭2','2','♭3','3','4','♭5','5','♭6','6','♭7','7'];
+  const DEGNAME=['Tonique','Seconde mineure','Seconde majeure','Tierce mineure','Tierce majeure','Quarte juste','Triton','Quinte juste','Sixte mineure','Sixte majeure','Septième mineure','Septième majeure'];
+  const CAT=['root','other','other','third','third','other','fifth','fifth','other','other','seventh','seventh'];
+  const COLOR={root:['var(--d-root)','var(--on-dark)'],third:['var(--d-third)','var(--on-light)'],fifth:['var(--d-fifth)','var(--on-dark)'],seventh:['var(--d-seventh)','var(--on-dark)'],other:['var(--d-other)','var(--on-light)']};
+  // string 1 = high E on top, like a tab
+  const STRINGS=[
+    {pc:4,  en:'e', fr:'Mi aigu',  w:1},
+    {pc:11, en:'B', fr:'Si',       w:1.2},
+    {pc:7,  en:'G', fr:'Sol',      w:1.6},
+    {pc:2,  en:'D', fr:'Ré',       w:2},
+    {pc:9,  en:'A', fr:'La',       w:2.5},
+    {pc:4,  en:'E', fr:'Mi grave', w:3},
+  ];
+  const FRETS=15;
+  const MARKS={3:1,5:1,7:1,9:1,12:2,15:1};
+  const FILTERS=[
+    ['Tout',[0,1,2,3,4,5,6,7,8,9,10,11]],
+    ['Gamme majeure',[0,2,4,5,7,9,11]],
+    ['Mineure naturelle',[0,2,3,5,7,8,10]],
+    ['Penta majeure',[0,2,4,7,9]],
+    ['Penta mineure',[0,3,5,7,10]],
+    ['Blues',[0,3,5,6,7,10]],
+    ['Triade maj',[0,4,7]],
+    ['Triade min',[0,3,7]],
+    ['7 (dominante)',[0,4,7,10]],
+    ['maj7',[0,4,7,11]],
+    ['m7',[0,3,7,10]],
+  ];
+  const MODES=[['deg','Degrés'],['note','Notes'],['both','Les deux']];
+  const NAMES=[['en','A B C'],['fr','Do Ré Mi']];
+
+  const state={s:5,f:5,filter:0,mode:'deg',names:'en'};
+  try{const saved=JSON.parse(localStorage.getItem('manche-degres')||'null'); if(saved) Object.assign(state,saved);}catch(e){}
+  const save=()=>{try{localStorage.setItem('manche-degres',JSON.stringify(state))}catch(e){}};
+
+  const nn=pc=>(state.names==='fr'?FR:EN)[pc];
+  const pcAt=(s,f)=>(STRINGS[s].pc+f)%12;
+
+  // open-string column + frets that shrink like a real neck
+  const cols=['2.6rem'];
+  for(let f=1;f<=FRETS;f++) cols.push(Math.pow(2,-(f-1)/12).toFixed(3)+'fr');
+  const tmpl=cols.join(' ');
+
+  const board=document.getElementById('board');
+  board.style.gridTemplateColumns=tmpl;
+  document.getElementById('frets').style.gridTemplateColumns=tmpl;
+
+  const openBg=document.createElement('div'); openBg.className='open-bg'; board.appendChild(openBg);
+  Object.entries(MARKS).forEach(([f,n])=>{
+    const d=document.createElement('div'); d.className='inlay'; d.style.gridColumn=(+f+1);
+    for(let i=0;i<n;i++) d.appendChild(document.createElement('i'));
+    board.appendChild(d);
+  });
+
+  const cells=[];
+  STRINGS.forEach((st,s)=>{
+    cells[s]=[];
+    for(let f=0;f<=FRETS;f++){
+      const b=document.createElement('button');
+      b.type='button';
+      b.className='cell'+(f===0?' open nut':' fretted');
+      b.style.gridRow=s+1; b.style.gridColumn=f+1;
+      b.style.setProperty('--sw',st.w+'px');
+      const dot=document.createElement('span'); dot.className='dot'; b.appendChild(dot);
+      b.addEventListener('click',()=>{state.s=s;state.f=f;save();render();});
+      board.appendChild(b); cells[s][f]={b,dot};
+    }
+  });
+
+  const sn=document.getElementById('snames');
+  const fr=document.getElementById('frets');
+
+  function chips(id,list,key,valFn,labelFn){
+    const el=document.getElementById(id); el.innerHTML='';
+    list.forEach((item,i)=>{
+      const v=valFn(item,i);
+      const c=document.createElement('button'); c.type='button'; c.className='chip';
+      c.textContent=labelFn(item);
+      c.setAttribute('aria-pressed',String(state[key]===v));
+      c.addEventListener('click',()=>{state[key]=v;save();render();});
+      el.appendChild(c);
+    });
+  }
+
+  function render(){
+    chips('filters',FILTERS,'filter',(x,i)=>i,x=>x[0]);
+    chips('modes',MODES,'mode',x=>x[0],x=>x[1]);
+    chips('names',NAMES,'names',x=>x[0],x=>x[1]);
+
+    const root=pcAt(state.s,state.f);
+    const allowed=new Set(FILTERS[state.filter][1]);
+
+    sn.innerHTML=STRINGS.map(st=>`<div>${state.names==='fr'?st.fr.split(' ')[0]:st.en}</div>`).join('');
+    fr.innerHTML=Array.from({length:FRETS+1},(_,f)=>`<div class="${MARKS[f]?'mk':''}">${f===0?'0':f}</div>`).join('');
+
+    STRINGS.forEach((st,s)=>{
+      for(let f=0;f<=FRETS;f++){
+        const pc=pcAt(s,f); const iv=(pc-root+12)%12;
+        const {b,dot}=cells[s][f];
+        const [c,t]=COLOR[CAT[iv]];
+        dot.style.setProperty('--c',c); dot.style.setProperty('--t',t);
+        const deg=DEG[iv], note=nn(pc);
+        dot.innerHTML= state.mode==='deg'?deg : state.mode==='note'?note : `${deg}<small>${note}</small>`;
+        dot.classList.toggle('off',!allowed.has(iv));
+        dot.classList.toggle('root',iv===0);
+        dot.classList.toggle('picked',s===state.s&&f===state.f);
+        b.setAttribute('aria-label',`Corde ${st.fr}, ${f===0?'à vide':'case '+f} : ${note}, degré ${deg}`);
+      }
+    });
+
+    document.getElementById('tonicName').textContent=nn(root);
+    document.getElementById('tblTonic').textContent=nn(root);
+    document.getElementById('tonicWhere').textContent=`Corde de ${STRINGS[state.s].fr}, ${state.f===0?'à vide':'case '+state.f}`;
+
+    const dim=i=>allowed.has(i)?'':' dim';
+    let h='<tr><th>Degré</th>'+DEG.map((d,i)=>{const[c,t]=COLOR[CAT[i]];return `<td class="deg${dim(i)}" style="--c:${c};--t:${t}"><span>${d}</span></td>`}).join('')+'</tr>';
+    h+='<tr><th>Note</th>'+DEG.map((d,i)=>`<td class="note${dim(i)}">${nn((root+i)%12)}</td>`).join('')+'</tr>';
+    h+='<tr><th>Demi-tons</th>'+DEG.map((d,i)=>`<td class="name${dim(i)}">${i}</td>`).join('')+'</tr>';
+    h+='<tr><th>Intervalle</th>'+DEGNAME.map((d,i)=>`<td class="name${dim(i)}">${d}</td>`).join('')+'</tr>';
+    document.getElementById('tbl').innerHTML=h;
+  }
+  render();
+})();
+</script>
+
+</body></html>
