@@ -180,43 +180,42 @@ h2{font-family:var(--display);font-weight:500;font-size:1.15rem;margin:0 0 8px}
   ];
   const FRETS=15;
   const MARKS={3:1,5:1,7:1,9:1,12:2,15:1};
-  // spelled, not semitones: the spelling drives interval labels and note names
+  // intervals spelled, not semitones: the spelling drives interval labels and note names.
+  // chords the scale is played over, default first; listed, not derived: the 7 under the pentatonics isn't in them
   const FILTERS=[
     ['scale','Tout',''],
-    ['scale','Majeure','1 2 3 4 5 6 7'],
-    ['scale','Mineure naturelle','1 2 ♭3 4 5 ♭6 ♭7'],
-    ['scale','Mineure harmonique','1 2 ♭3 4 5 ♭6 7'],
-    ['scale','Mineure mélodique','1 2 ♭3 4 5 6 7'],
-    ['scale','Penta majeure','1 2 3 5 6'],
-    ['scale','Penta mineure','1 ♭3 4 5 ♭7'],
-    ['scale','Blues','1 ♭3 4 ♭5 5 ♭7'],
+    ['scale','Majeure','1 2 3 4 5 6 7','maj7 maj'],
+    ['scale','Mineure naturelle','1 2 ♭3 4 5 ♭6 ♭7','m7 m'],
+    ['scale','Mineure harmonique','1 2 ♭3 4 5 ♭6 7','m'],
+    ['scale','Mineure mélodique','1 2 ♭3 4 5 6 7','m'],
+    ['scale','Penta majeure','1 2 3 5 6','maj maj7 7'],
+    ['scale','Penta mineure','1 ♭3 4 5 ♭7','m7 m 7'],
+    ['scale','Blues','1 ♭3 4 ♭5 5 ♭7','m7 m 7'],
     // brightest to darkest: each step flattens exactly one note
-    ['mode','Lydien','1 2 3 ♯4 5 6 7'],
-    ['mode','Ionien','','Majeure'],
-    ['mode','Mixolydien','1 2 3 4 5 6 ♭7'],
-    ['mode','Dorien','1 2 ♭3 4 5 6 ♭7'],
-    ['mode','Éolien','','Mineure naturelle'],
-    ['mode','Phrygien','1 ♭2 ♭3 4 5 ♭6 ♭7'],
-    ['mode','Locrien','1 ♭2 ♭3 4 ♭5 ♭6 ♭7'],
+    ['mode','Lydien','1 2 3 ♯4 5 6 7','maj7 maj'],
+    ['mode','Ionien','','','Majeure'],
+    ['mode','Mixolydien','1 2 3 4 5 6 ♭7','7 maj'],
+    ['mode','Dorien','1 2 ♭3 4 5 6 ♭7','m7 m'],
+    ['mode','Éolien','','','Mineure naturelle'],
+    ['mode','Phrygien','1 ♭2 ♭3 4 5 ♭6 ♭7','m7 m'],
+    ['mode','Locrien','1 ♭2 ♭3 4 ♭5 ♭6 ♭7','m7♭5'],
     // by parent scale: harmonic minor, then melodic minor in degree order
-    ['minor-mode','Phrygien dominant','1 ♭2 3 4 5 ♭6 ♭7'],
-    ['minor-mode','Lydien ♭7','1 2 3 ♯4 5 6 ♭7'],
-    ['minor-mode','Locrien ♮2','1 2 ♭3 4 ♭5 ♭6 ♭7'],
+    ['minor-mode','Phrygien dominant','1 ♭2 3 4 5 ♭6 ♭7','7 maj'],
+    ['minor-mode','Lydien ♭7','1 2 3 ♯4 5 6 ♭7','7 maj'],
+    ['minor-mode','Locrien ♮2','1 2 ♭3 4 ♭5 ♭6 ♭7','m7♭5'],
     // jazz chord-symbol spelling (♭9 ♯9 ♯11 ♭13); one-letter-per-note would give ♭4 for the major third
-    ['minor-mode','Altérée','1 ♭2 ♯2 3 ♯4 ♭6 ♭7'],
-    ['chord','Triade maj','1 3 5'],
-    ['chord','Triade min','1 ♭3 5'],
-    ['chord','7 (dominante)','1 3 5 ♭7'],
-    ['chord','maj7','1 3 5 7'],
-    ['chord','m7','1 ♭3 5 ♭7'],
-    ['chord','m7♭5 (demi-diminué)','1 ♭3 ♭5 ♭7'],
-  ].map(([group,label,ivs,alias])=>({group,label,alias,ivs:ivs?ivs.split(' ').map(parseIv):null}));
+    ['minor-mode','Altérée','1 ♭2 ♯2 3 ♯4 ♭6 ♭7','7'],
+    ['chord','Triade maj','1 3 5','maj'],
+    ['chord','Triade min','1 ♭3 5','m'],
+    ['chord','7 (dominante)','1 3 5 ♭7','7'],
+    ['chord','maj7','1 3 5 7','maj7'],
+    ['chord','m7','1 ♭3 5 ♭7','m7'],
+    ['chord','m7♭5 (demi-diminué)','1 ♭3 ♭5 ♭7','m7♭5'],
+  ].map(([group,label,ivs,chords,alias])=>({group,label,alias,ivs:ivs?ivs.split(' ').map(parseIv):null,chords:chords?chords.split(' '):null}));
   const LABELS=[['deg','Intervalles'],['note','Notes'],['both','Les deux']];
   const NAMES=[['en','A B C'],['fr','Do Ré Mi']];
   const ivs=label=>FILTERS.find(x=>x.label===label).ivs;
   const QUALITIES=[['maj','',ivs('Triade maj')],['m','m',ivs('Triade min')],['7','7',ivs('7 (dominante)')],['maj7','maj7',ivs('maj7')],['m7','m7',ivs('m7')],['m7♭5','m7♭5',ivs('m7♭5 (demi-diminué)')]];
-  // largest chord on the scale's tonic; ties keep QUALITIES order (Blues → m7, not m7♭5); no 5th (altered) → 7
-  const tonicChord=scale=>QUALITIES.filter(q=>q[2].every(x=>scale.some(y=>y.n===x.n&&y.a===x.a))).sort((a,b)=>b[2].length-a[2].length)[0]||QUALITIES.find(q=>q[0]==='7');
   // grips written low E → high e, like chord charts; explicit because the string where ♭7 replaces a root varies per shape
   const CAGED=[
     {name:'C',key:0,grips:{maj:'x32010',m:'x31013','7':'x32310',maj7:'x32000',m7:'x3134x','m7♭5':'x31312'}},
@@ -306,19 +305,16 @@ h2{font-family:var(--display);font-weight:500;font-size:1.15rem;margin:0 0 8px}
     chips('labels',LABELS,'mode',x=>x[0],x=>x[1]);
     chips('names',NAMES,'names',x=>x[0],x=>x[1]);
     chips('caged',CAGED_OPTS,'caged',x=>x[0],x=>x[1]);
-    chips('quality',QUALITIES,'quality',x=>x[0],x=>x[0]);
 
     const root=pcAt(state.s,state.f);
     const filter=FILTERS.find(x=>x.label===state.filter);
     const allowed=new Set((filter.ivs||CHROMATIC).map(semis));
     const caged=state.caged!=='off', all=state.caged==='all';
     const arpeggio=filter.group==='chord';
-    // a new scale brings its tonic chord, which the chord row may then override; an arpeggio always is the chord
-    if(filter.ivs&&(arpeggio||state.filter!==shownFilter)){
-      const q=tonicChord(filter.ivs)[0];
-      if(q!==state.quality){state.quality=q;save();}
-    }
+    // a new scale resets the chord to its default; the chord row may then pick another one the scale allows
+    if(filter.chords&&(state.filter!==shownFilter||!filter.chords.includes(state.quality))){state.quality=filter.chords[0];save();}
     shownFilter=state.filter;
+    chips('quality',(filter.chords||QUALITIES.map(x=>x[0])).map(k=>QUALITIES.find(x=>x[0]===k)),'quality',x=>x[0],x=>x[0]);
     const quality=QUALITIES.find(x=>x[0]===state.quality);
     const chord=new Set(quality[2].map(semis));
     const insts=caged?CAGED.filter((x,i)=>all||state.caged===i).flatMap(x=>instances(x,root,quality[0])):[];
