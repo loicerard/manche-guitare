@@ -209,18 +209,19 @@ h2{font-family:var(--display);font-weight:500;font-size:1.15rem;margin:0 0 8px}
     ['chord','7 (dominante)','1 3 5 ♭7'],
     ['chord','maj7','1 3 5 7'],
     ['chord','m7','1 ♭3 5 ♭7'],
+    ['chord','m7♭5 (demi-diminué)','1 ♭3 ♭5 ♭7'],
   ].map(([group,label,ivs,alias])=>({group,label,alias,ivs:ivs?ivs.split(' ').map(parseIv):null}));
   const LABELS=[['deg','Intervalles'],['note','Notes'],['both','Les deux']];
   const NAMES=[['en','A B C'],['fr','Do Ré Mi']];
   const ivs=label=>FILTERS.find(x=>x.label===label).ivs;
-  const QUALITIES=[['maj','',ivs('Triade maj')],['m','m',ivs('Triade min')],['7','7',ivs('7 (dominante)')],['maj7','maj7',ivs('maj7')],['m7','m7',ivs('m7')]];
+  const QUALITIES=[['maj','',ivs('Triade maj')],['m','m',ivs('Triade min')],['7','7',ivs('7 (dominante)')],['maj7','maj7',ivs('maj7')],['m7','m7',ivs('m7')],['m7♭5','m7♭5',ivs('m7♭5 (demi-diminué)')]];
   // grips written low E → high e, like chord charts; explicit because the string where ♭7 replaces a root varies per shape
   const CAGED=[
-    {name:'C',key:0,grips:{maj:'x32010',m:'x31013','7':'x32310',maj7:'x32000',m7:'x3134x'}},
-    {name:'A',key:9,grips:{maj:'x02220',m:'x02210','7':'x02020',maj7:'x02120',m7:'x02010'}},
-    {name:'G',key:7,grips:{maj:'320003',m:'310033','7':'320001',maj7:'320002',m7:'3x333x'}},
-    {name:'E',key:4,grips:{maj:'022100',m:'022000','7':'020100',maj7:'021100',m7:'020000'}},
-    {name:'D',key:2,grips:{maj:'xx0232',m:'xx0231','7':'xx0212',maj7:'xx0222',m7:'xx0211'}},
+    {name:'C',key:0,grips:{maj:'x32010',m:'x31013','7':'x32310',maj7:'x32000',m7:'x3134x','m7♭5':'x31312'}},
+    {name:'A',key:9,grips:{maj:'x02220',m:'x02210','7':'x02020',maj7:'x02120',m7:'x02010','m7♭5':'x0101x'}},
+    {name:'G',key:7,grips:{maj:'320003',m:'310033','7':'320001',maj7:'320002',m7:'3x333x','m7♭5':'3x332x'}},
+    {name:'E',key:4,grips:{maj:'022100',m:'022000','7':'020100',maj7:'021100',m7:'020000','m7♭5':'010030'}},
+    {name:'D',key:2,grips:{maj:'xx0232',m:'xx0231','7':'xx0212',maj7:'xx0222',m7:'xx0211','m7♭5':'xx0111'}},
   ];
   const CAGED_OPTS=[['off','Off'],...CAGED.map((x,i)=>[i,x.name]),['all','Toutes']];
   const gripAt=(str,shift)=>str.split('').reverse().map(c=>c==='x'?null:+c+shift);
@@ -308,9 +309,12 @@ h2{font-family:var(--display);font-weight:500;font-size:1.15rem;margin:0 0 8px}
     const filter=FILTERS.find(x=>x.label===state.filter);
     const allowed=new Set((filter.ivs||CHROMATIC).map(semis));
     const caged=state.caged!=='off', all=state.caged==='all';
+    const arpeggio=filter.group==='chord';
+    // the arpeggio is the CAGED chord; kept when switching back to a scale
+    if(arpeggio) state.quality=QUALITIES.find(x=>x[2]===filter.ivs)[0];
     const quality=QUALITIES.find(x=>x[0]===state.quality);
     const chord=new Set(quality[2].map(semis));
-    const insts=caged?CAGED.filter((x,i)=>all||state.caged===i).flatMap(x=>instances(x,root,state.quality)):[];
+    const insts=caged?CAGED.filter((x,i)=>all||state.caged===i).flatMap(x=>instances(x,root,quality[0])):[];
     const spelled=new Map([...(caged?quality[2]:[]),...(filter.ivs||[])].map(x=>[semis(x),x]));
     const tonic=spellTonic(root,filter.ivs||(caged?quality[2]:CHROMATIC));
     const noteOf=x=>noteName(noteAt(tonic,x));
@@ -319,7 +323,7 @@ h2{font-family:var(--display);font-weight:500;font-size:1.15rem;margin:0 0 8px}
     const tritone=accs(AUG4)<accs(CHROMATIC[6])?AUG4:CHROMATIC[6];
     const ivAt=i=>spelled.get(i)||(i===6?tritone:CHROMATIC[i]);
 
-    document.getElementById('qualityGroup').hidden=!caged;
+    document.getElementById('qualityGroup').hidden=!caged||arpeggio;
     document.querySelectorAll('[data-caged]').forEach(el=>el.hidden=!caged);
     document.querySelectorAll('[data-bands]').forEach(el=>el.hidden=!all);
     // adjacent zones overlap by a fret, so three rows keep every band clear of its neighbours
