@@ -171,12 +171,12 @@ h2{font-family:var(--display);font-weight:500;font-size:1.15rem;margin:0 0 8px}
   const COLOR={root:['var(--d-root)','var(--on-dark)'],third:['var(--d-third)','var(--on-light)'],fifth:['var(--d-fifth)','var(--on-dark)'],seventh:['var(--d-seventh)','var(--on-dark)'],other:['var(--d-other)','var(--on-light)']};
   // string 1 = high E on top, like a tab
   const STRINGS=[
-    {pc:4,  en:'e', fr:'Mi aigu',  w:1},
-    {pc:11, en:'B', fr:'Si',       w:1.2},
-    {pc:7,  en:'G', fr:'Sol',      w:1.6},
-    {pc:2,  en:'D', fr:'Ré',       w:2},
-    {pc:9,  en:'A', fr:'La',       w:2.5},
-    {pc:4,  en:'E', fr:'Mi grave', w:3},
+    {midi:64, en:'e', fr:'Mi aigu',  w:1},
+    {midi:59, en:'B', fr:'Si',       w:1.2},
+    {midi:55, en:'G', fr:'Sol',      w:1.6},
+    {midi:50, en:'D', fr:'Ré',       w:2},
+    {midi:45, en:'A', fr:'La',       w:2.5},
+    {midi:40, en:'E', fr:'Mi grave', w:3},
   ];
   const FRETS=15;
   const MARKS={3:1,5:1,7:1,9:1,12:2,15:1};
@@ -232,8 +232,21 @@ h2{font-family:var(--display);font-weight:500;font-size:1.15rem;margin:0 0 8px}
     const base=(root-shape.key+12)%12;
     return [base,base+12].map(shift=>{
       const major=played(gripAt(shape.grips.maj,shift));
-      return {shape,grip:gripAt(shape.grips[quality],shift),lo:Math.min(...major)-1,hi:Math.max(...major)+1};
+      const x={shape,grip:gripAt(shape.grips[quality],shift),lo:Math.min(...major)-1,hi:Math.max(...major)+1};
+      return {...x,cells:zoneCells(x)};
     }).filter(x=>Math.max(...played(x.grip),x.hi-1)<=FRETS);
+  }
+
+  // the window holds some pitches on two adjacent strings: keep the grip's, else the higher string's, which avoids whole-tone stretches
+  function zoneCells(x){
+    const at=new Map();
+    STRINGS.forEach((st,s)=>{
+      for(let f=Math.max(x.lo,0);f<=Math.min(x.hi,FRETS);f++){
+        const p=st.midi+f;
+        if(!at.has(p)||x.grip[s]===f) at.set(p,s+':'+f);
+      }
+    });
+    return new Set(at.values());
   }
 
   const state={s:5,f:5,filter:'Tout',mode:'deg',names:'en',caged:'off',quality:'7'};
@@ -242,7 +255,7 @@ h2{font-family:var(--display);font-weight:500;font-size:1.15rem;margin:0 0 8px}
   let shownFilter=state.filter;
   const save=()=>{try{localStorage.setItem('manche-degres',JSON.stringify(state))}catch(e){}};
 
-  const pcAt=(s,f)=>(STRINGS[s].pc+f)%12;
+  const pcAt=(s,f)=>(STRINGS[s].midi+f)%12;
   const noteAt=(tonic,x)=>{const l=(tonic.l+x.n-1)%7;return {l,a:accOf(NAT[tonic.l]+tonic.a+semis(x)-NAT[l])};};
   const noteName=x=>LETTERS[state.names][x.l]+ACC[x.a];
   // fewest accidentals over the scale; ties go sharp; a natural stays natural (never E♯ or F♭)
@@ -345,7 +358,7 @@ h2{font-family:var(--display);font-weight:500;font-size:1.15rem;margin:0 0 8px}
         const label=ivLabel(iv), note=noteOf(iv);
         dot.innerHTML= state.mode==='deg'?label : state.mode==='note'?note : `${label}<small>${note}</small>`;
         const inGrip=insts.some(x=>x.grip[s]===f);
-        const inZone=insts.some(x=>f>=x.lo&&f<=x.hi);
+        const inZone=insts.some(x=>x.cells.has(s+':'+f));
         const inChord=chord.has(i)&&!all&&inZone;
         const shown=!caged||all?allowed.has(i)||inGrip:inGrip||(inZone&&(chord.has(i)||allowed.has(i)));
         dot.classList.toggle('off',!shown);
